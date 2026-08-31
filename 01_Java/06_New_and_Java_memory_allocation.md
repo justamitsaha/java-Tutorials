@@ -1,150 +1,137 @@
-# New and Java memory allocation
+# Object Instantiation and Java Memory Allocation
 
-Lets say we have a Square object
+## Overview
+
+In Java, all objects are dynamically allocated at runtime. Understanding how objects are stored, referenced, and managed in memory is essential for writing efficient and bug-free Java programs.
+
+Consider the following `Box` class definition:
 
 ```java
 public class Test {
     public static void main(String[] args) {
+        // Execution entry point
     }
 }
 
 class Box {
-    int height, width, length;
-
-    int area() {
-        return this.height * this.length * this.width;
-    }
+    int height;
+    int width;
+    int length;
 
     public Box(int height, int width, int length) {
         this.height = height;
         this.width = width;
         this.length = length;
     }
-}
-```
-
-### How are objects stored and referenced?
-
-- In Java objects are stored in a memory location called Heap.
-- When objects are declared just a reference variable is created pointing to nothing.
-
-```java
-public class Test {
-    public static void main(String[] args) {
-        Box b1; // Points to nothing}
-    }
-}
-
-class Box {
-    int height, width, length;
 
     int area() {
         return this.height * this.length * this.width;
     }
-
-    public Box(int height, int width, int length) {
-        this.height = height;
-        this.width = width;
-        this.length = length;
-    }
 }
 ```
 
-- Objects are created with new keyword. new operator dynamically allocates during runtime memory for an object and returns a reference to it.
+---
+
+## How Objects are Stored and Referenced
+
+### 1. Reference Variable Declaration
+When a reference variable is declared without initialization, only a variable slot is created on the call stack. It does not point to any valid object in memory.
+
+```java
+Box b1; // Declares a reference variable on the stack pointing to nothing
+```
+
+### 2. The `new` Operator
+The `new` operator dynamically allocates memory on the **Heap** at runtime to store the object's instance fields and invokes the appropriate constructor to initialize state:
+
+```java
+Box b1 = new Box(1, 1, 1); // Allocates object on the Heap and assigns address to b1
+```
+
+- **Reference Address:** The variable `b1` stores the memory reference (address pointer) to the allocated object in heap memory.
+- **Member Access:** Instance fields and methods cannot be accessed until the reference points to an instantiated object.
+
+![Memory Allocation Representation](../images/image2.png)
+
+![Object Reference Mechanics](../images/image3.png)
+
+---
+
+## Reference Assignment and Aliasing
+
+In Java, reference assignment (`=`) copies the memory reference (address), not the underlying object data. When multiple reference variables point to the same heap object, modifying the object via one reference affects all references pointing to that same object (aliasing).
 
 ```java
 public class Test {
     public static void main(String[] args) {
-        Box b1 = new Box(1, 1, 1); // Points to location in memory}
-    }
-}
-class Box {
-    int height, width, length;
+        Box b1 = new Box(1, 1, 1);
+        Box b2 = b1; // b2 now points to the exact same heap object as b1
 
-    int area() {
-        return this.height * this.length * this.width;
-    }
+        b1.length = 2;
+        // Since b1 and b2 reference the same object, b2.length reflects the change
+        System.out.println("b2.length: " + b2.length); // Outputs: 2
 
-    public Box(int height, int width, int length) {
-        this.height = height;
-        this.width = width;
-        this.length = length;
+        Box b3 = new Box(3, 3, 3);
+        b2 = b3; // b2 now points to the new Box object; b1 still points to original object
+        System.out.println("b1.length: " + b1.length); // Outputs: 2
+
+        b3 = null; // b3 no longer references the object; b2 still retains the reference
+        System.out.println("b2.length: " + b2.length); // Outputs: 3
     }
 }
 ```
 
-- This reference is, essentially, the address in memory of the object allocated by new. This reference is then stored in the variable.
+---
 
-- So before new we can’t access its members (variables or methods)
-
-![image2.png](../images/image2.png)
-
-![image3.png](../images/image3.png)
-
-Whenever we use = operator with objects it does memory assignment.
-
-- b2 = b1 means both point to same location and values, if we change value of b1 , b2 also changes
-
-.
-
-- If we do b1 = b2 and after that if we do b2 = b3, it will mean b1 still points to old location and will not change
-
-- If we do b1 = null b2 will still points to previous memory location
+## Uninitialized References vs Null References
 
 ```java
-public static void main(String[] args) {
-    Box b1 = new Box(1,1,1);
-    Box b2 = b1;
-    System.out.println(b2.length);
-    b1.length =2;
-    //when b1=b2 changing value of one will change other
-    System.out.println(b2.length);
+// Uninitialized local reference: Compiler error (variable might not have been initialized)
+Box box1;
+// box1.toString(); // Compilation error
 
-    Box b3 = new Box(3,3,3);
-    b2 = b3;
-    //b1 still points to old object
-    System.out.println(b1.length);
-
-    //b3 becomes null b1 and b2 unaffected
-    b3 = null;
-    System.out.println(b2.length);
-}
-
+// Null reference: Compiles successfully, but throws NullPointerException at runtime
+Box box2 = null;
+// box2.toString(); // Throws java.lang.NullPointerException
 ```
 
-Once the object is created with new keyword(not needed for String) then only we can act on it and access its members
+---
 
-```java
-Box box;
-box.toString(); // This is not compile
+## JVM Runtime Memory Architecture
 
-Box box = null; // With this we can trick Java into compiling
-box.toString(); // But will throw NullPointerException
+The Java Virtual Machine divides runtime memory into distinct regions to optimize data locality, execution speed, and garbage collection:
 
 ```
++-----------------------------------------------------------------------+
+|                             JVM Memory                                |
+|                                                                       |
+|  +--------------------------------+  +-----------------------------+  |
+|  |           Heap Memory          |  |       Metaspace / Method    |  |
+|  |  (Objects, Arrays, Instance    |  |  (Class metadata, Method    |  |
+|  |   fields, String Pool)         |  |   bytecodes, Static fields) |  |
+|  +--------------------------------+  +-----------------------------+  |
+|                                                                       |
+|  +--------------------------------+  +-----------------------------+  |
+|  |          Stack Memory          |  |         Native Memory       |  |
+|  |  (Stack frames, Local vars,    |  |  (Code Cache for JIT,       |  |
+|  |   Primitive values, References)|  |   C/C++ native libraries)   |  |
+|  +--------------------------------+  +-----------------------------+  |
++-----------------------------------------------------------------------+
+```
 
-- Primitives like int height; don’t need new operator as they are stored in stack instead of heap where objects are stored for better efficiency.
+### Memory Region Roles
 
-- new allocates memory for an object during run time.
+| Memory Region | Stored Content | Lifetime / Scope |
+| :--- | :--- | :--- |
+| **Heap** | All dynamically instantiated objects, arrays, and their instance fields. | Global across all application threads. Reclaimed by Garbage Collector. |
+| **Stack** | Stack frames containing local variables, method arguments, and reference pointers. | Thread-local. Pushed on method invocation and popped on method exit. |
+| **Metaspace (Method Area)** | Class structures, method bytecodes, runtime constant pool, and `static` variables. | Native memory allocated per classloader; persistent across the JVM lifecycle. |
+| **Code Cache (Native Heap)** | JIT-compiled native machine code for identified hotspots and native libraries. | Managed by the HotSpot JIT compiler in native memory. |
 
-- The advantage of this approach is that your program can create as many or as few objects as it needs during the execution of your program.
+---
 
-- However, since memory is finite, it is possible that new will not be able to allocate memory for an object because insufficient memory exists.
+## Garbage Collection Fundamentals
 
-- If this happens, a run-time exception will occur.
-
-**Java Memory management**
-
-The JVM divides the memory into two parts: [stack](https://www.javatpoint.com/java-stack) memory and [heap](https://www.javatpoint.com/java-heap) memory. Stack is used to store the order of method execution and local variables while the heap memory stores the objects, and it uses dynamic memory allocation and deallocation.
-
-- **Heap** Objects
-
-- **Stack**  This is the area of memory where local variables and method calls are going to be stored. So whenever a new method is being called, a new stack frame is going to be created on the stack, which will contain all the methods, local variables and parameters. And whenever the method returns the execution or completes the execution, the stack frame is going to be removed along with the local variables and the parameters.
-
-- **Method Area**  This is the place where we are going to store all the class definitions, method definitions and other runtime constants like static variables are going to be stored.
-
-- **Native Heap**   This is the area of memory where native libraries, and the code are going to be loaded are stored. JIT compiler is going to identify the hotspots inside my classes and methods, which are going to be executed many times or very frequently all such hotspots bytecode is going to be converted into a native executable code by the JIT compiler, and it is going to cache it inside a memory. And that memory is native heap.
-
-When object are not used then it is garbage collected from Heap
-
-[https://www.javatpoint.com/stack-vs-heap-java](https://www.javatpoint.com/stack-vs-heap-java)
+- **Automatic Reclamation:** When an object on the heap no longer has any active references pointing to it from reachable roots (such as stack frames or static variables), it becomes eligible for Garbage Collection (GC).
+- **No Manual Deallocation:** Unlike C/C++ (`free` / `delete`), Java prevents memory leaks and dangling pointers by delegating deallocation to the JVM Garbage Collector.
+- **OutOfMemoryError:** If heap memory is exhausted and the GC cannot reclaim sufficient space for new allocations, the JVM throws `java.lang.OutOfMemoryError: Java heap space`.
