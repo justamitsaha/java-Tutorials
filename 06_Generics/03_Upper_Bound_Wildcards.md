@@ -76,6 +76,20 @@ So, when we do below it will not compile. So, to maintain type safety, Java does
 But both can have different access. Hence to prevent ambiguity we only allow read operations and not write operations like adding to list. As by adding both developers and managers to List we can do incorrect operations like manangers trying to push code and developers giving change approvals
 
 ```java
-static void addToList(List<? extends Employee> list){    list.add(new Developer());   //will not compile as we don't know the exact type of list    list.add(new SeniorDev());   //will not compile as we don't know the exact type    // This is because the list could be of any subtype of Employee, and adding a specific subtype could violate type safety.    // For example, if the list is actually a List<Developer>, adding a SeniorDev would be incorrect.    for (Employee employee: list){        System.out.println(employee);    }}
+static void addToList(List<? extends Employee> list) {
+    // These will not compile because we don't know the exact type of the list.
+    // list.add(new Developer());
+    // list.add(new SeniorDev());
+
+    // The list could be a List<Developer>, List<SeniorDev>,
+    // or another subtype of Employee.
+    // Adding a specific subtype could violate type safety.
+    // For example, if the list is a List<Developer>,
+    // adding a SeniorDev would be incorrect.
+
+    for (Employee employee : list) {
+        System.out.println(employee);
+    }
+}
 
 ```

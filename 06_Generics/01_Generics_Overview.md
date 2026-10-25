@@ -28,6 +28,15 @@ After Java 5, we use collection classes like below. At the time of list creation
 For example, we have a common Response class which will be returned to User for many scenario. Now if we want to send a response of Employee.
 
 ```java
+public class Test {
+    public static void main(String[] args) {
+        Employee employee = new Employee(50000, 28);
+        Response res = new Response();
+        res.setResponse(employee);
+        res.setCode("200");
+    }
+}
+
 class Response {
     private Object response;
     private String code;
@@ -45,15 +54,6 @@ class Response {
     }
 }
 
-public class Test {
-    public static void main(String[] args) {
-        Employee employee = new Employee(50000, 28);
-        Response res = new Response();
-        res.setResponse(employee);
-        res.setCode("200");
-    }
-}
-
 class Employee {
     int salary;
     int age;
@@ -64,12 +64,20 @@ class Employee {
         this.age = age;
     }
 }
-
 ```
 
 With generics we can do like this
 
 ```java
+public class Test {
+    public static void main(String[] args) {
+        Employee employee = new Employee(50000, 28);
+        Response<Employee> res  = new Response<>();
+        res.setResponse(employee);
+        res.setCode("200");
+        System.out.println(res);
+    }
+}
 class Response<T> {
 
     private T response;
@@ -88,16 +96,6 @@ class Response<T> {
     }
 }
 
-public class Test {
-    public static void main(String[] args) {
-        Employee employee = new Employee(50000, 28);
-        Response<Employee> res  = new Response<>();
-        res.setResponse(employee);
-        res.setCode("200");
-        System.out.println(res);
-    }
-}
-
 class Employee {
     int salary;
     int age;
@@ -108,7 +106,6 @@ class Employee {
         this.age = age;
     }
 }
-
 ```
 
 Notice the use of GenericsType class in the main method. We don’t need to do type-casting and we can remove ClassCastException at runtime. If we don’t provide the type at the time of creation, the compiler will produce a warning that “GenericsType is a raw type. References to generic type GenericsType<T> should be parameterized”. When we don’t provide the type, the type becomes Object and hence it can allow any data type like String and Integer. But, we should always try to avoid this because we will have to use type casting while working on raw type that can produce runtime errors.
@@ -130,15 +127,66 @@ Java Generic Type Naming convention helps us understanding code easily and havin
 Sometimes we don’t want the whole class to be parameterized, in that case, we can create java generics method. Since the constructor is a special kind of method, we can use generics type in constructors too. Here is a class showing an example of a java generic method.
 
 ```java
-class Response<T> {    private T data;    public Response(T data) {        this.data = data;    }    public T getData() { return data; }    @Override    public boolean equals(Object obj) {        if (this == obj) return true;        if (!(obj instanceof Response)) return false;        Response<?> other = (Response<?>) obj;        return data != null && data.equals(other.data);    }}public class Test {    // Generic method (only this method is generic, not the whole class)    public <T> boolean isEqual(Response<T> g1, Response<T> g2) {        return g1.equals(g2);    }    // Generic constructor    public <T> Test(T value) {        System.out.println("Generic constructor called with: " + value);    }    public static void main(String[] args) {        // Using generic constructor        Test obj1 = new Test("Hello");        Test obj2 = new Test(100);        // Using generic method        Response<String> r1 = new Response<>("data");        Response<String> r2 = new Response<>("data");        Response<Integer> r3 = new Response<>(10);        Test util = new Test("Utility");        System.out.println("Compare r1 and r2: " + util.isEqual(r1, r2)); // true        // util.isEqual(r1, r3); // ❌ compile-time error (different types)    }}
+public class Test {
+
+    // Generic method
+    public <T> boolean isEqual(T a, T b) {
+        return a.equals(b);
+    }
+
+    // Generic constructor
+    public <T> Test(T value) {
+        System.out.println("Constructor called with: " + value);
+    }
+
+    public static void main(String[] args) {
+        // Generic constructor: accepts different types
+        Test obj1 = new Test("Hello");
+        Test obj2 = new Test(100);
+
+        // Generic method: works with different types
+        Test util = new Test("Utility");
+
+        System.out.println(util.isEqual("Hello", "Hello")); // true
+        System.out.println(util.isEqual(10, 20));           // false
+
+        // Java can infer a common supertype for both arguments, such as Object hence this will compile and return false
+        System.out.println(util.isEqual("Hello", 10));
+    }
+}
 
 ```
 
 Suppose we want to restrict the type of objects that can be used in the parameterized type, for example in a method that compares two objects and we want to make sure that the accepted objects are Comparables. To declare a bounded type parameter, list the type parameter’s name, followed by the extends keyword, followed by its upper bound, similar like below method.
 
 ```java
-// A normal (non-generic) class with bounded generic methodspublic class Test {    // Bounded generic method - only works on Comparable types    public static <T extends Comparable<T>> int compare(T t1, T t2) {        return t1.compareTo(t2);    }    // Generic constructor with bounded type    public <T extends Number> Test(T value) {        System.out.println("Generic constructor with Number: " + value);    }    public static void main(String[] args) {        // ✅ Works because String implements Comparable<String>        System.out.println("Compare Strings: " + compare("apple", "banana"));        // ✅ Works because Integer implements Comparable<Integer>        System.out.println("Compare Integers: " + compare(10, 20));        // ❌ Compile-time error: Person does not implement Comparable        // Person p1 = new Person("Amit");        // Person p2 = new Person("Saha");        // System.out.println(compare(p1, p2));        // Using bounded generic constructor (only Numbers allowed)        Test obj1 = new Test(123);        // BoundedGenericMethodExample obj2 = new BoundedGenericMethodExample("Hello"); // ❌ error, not Number    }}
+// A normal (non-generic) class with bounded generic methodspublic 
+class Test {
+    // Bounded generic method - only works on Comparable types
+    public static <T extends Comparable<T>> int compare(T t1, T t2) {
+        return t1.compareTo(t2);
+    }
 
+    // Generic constructor with bounded type
+    public <T extends Number> Test(T value) {
+        System.out.println("Generic constructor with Number: " + value);
+    }
+
+    public static void main(String[] args) {
+        // ✅ Works because String implements Comparable<String>
+        System.out.println("Compare Strings: " + compare("apple", "banana"));
+        // ✅ Works because Integer implements Comparable<Integer>
+        System.out.println("Compare Integers: " + compare(10, 20));
+        // ❌ Compile-time error: Person does not implement Comparable
+        // Person p1 = new Person("Amit");
+        // Person p2 = new Person("Saha");
+        // System.out.println(compare(p1, p2));
+        // Using bounded generic constructor (only Numbers allowed)
+        Test obj1 = new Test(123);
+        // BoundedGenericMethodExample obj2 = new BoundedGenericMethodExample("Hello");
+        // // ❌ error, not Number
+    }
+}
 ```
 
 The invocation of these methods is similar to unbounded method except that if we will try to use any class that is not Comparable, it will throw compile-time error. Bounded type parameters can be used with methods as well as classes and interfaces. Java Generics supports multiple bounds also, i.e <T extends A & B & C>. In this case, A can be an interface or class. If A is class then B and C should be an interface. We can’t have more than one class in multiple bounds. One example below where
@@ -150,7 +198,52 @@ The invocation of these methods is similar to unbounded method except that if we
 - But if we remove it it will not compile
 
 ```java
-// Custom interfaceinterface Identifiable {    String getId();}// Class implementing Comparable + Identifiableclass Employee implements Comparable<Employee>, Identifiable {    private String id;    private int salary;    public Employee(String id, int salary) {        this.id = id;        this.salary = salary;    }    public String getId() {        return id;    }    @Override    public int compareTo(Employee other) {        return Integer.compare(this.salary, other.salary);    }    @Override    public String toString() {        return id + " : " + salary;    }}public class Test {    // T must extend Employee AND implement Identifiable    public static <T extends Employee & Identifiable> T getHigherPaid(T e1, T e2) {        return (e1.compareTo(e2) > 0) ? e1 : e2;    }    public static void main(String[] args) {        Employee emp1 = new Employee("E1", 5000);        Employee emp2 = new Employee("E2", 8000);        Employee higher = getHigherPaid(emp1, emp2);        System.out.println("Higher paid: " + higher);    }}
+// Custom interface
+interface Identifiable {
+    String getId();
+}
+
+// Class implementing Comparable + Identifiable
+class Employee implements Comparable<Employee>, Identifiable {
+    private String id;
+    private int salary;
+
+    public Employee(String id, int salary) {
+        this.id = id;
+        this.salary = salary;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    @Override
+    public int compareTo(Employee other) {
+        return Integer.compare(this.salary, other.salary);
+    }
+
+    @Override
+    public String toString() {
+        return id + " : " + salary;
+    }
+}
+
+public class Test {
+
+    // T must extend Employee AND implement Identifiable
+    public static <T extends Employee & Identifiable> T getHigherPaid(T e1, T e2) {
+        return (e1.compareTo(e2) > 0) ? e1 : e2;
+    }
+
+    public static void main(String[] args) {
+        Employee emp1 = new Employee("E1", 5000);
+        Employee emp2 = new Employee("E2", 8000);
+
+        Employee higher = getHigherPaid(emp1, emp2);
+
+        System.out.println("Higher paid: " + higher);
+    }
+}
 
 ```
 

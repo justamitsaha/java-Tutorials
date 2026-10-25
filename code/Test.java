@@ -1,31 +1,32 @@
+import java.util.ArrayList;
+import java.util.List;
+
 public class Test {
+
+    // Generic method
+    public <T> boolean isEqual(T a, T b) {
+        return a.equals(b);
+    }
+
+    // Generic constructor
+    public <T> Test(T value) {
+        System.out.println("Constructor called with: " + value);
+    }
+
     public static void main(String[] args) {
-        Box b1 = new Box(1, 1, 1);
-        Box b2 = b1;
-        b1.length = 2;
-        System.out.println("b2.length: " + b2.length);
+        // Generic constructor: accepts different types
+        Test obj1 = new Test("Hello");
+        Test obj2 = new Test(100);
 
-        Box b3 = new Box(3, 3, 3);
-        b2 = b3;
-        System.out.println("b1.length: " + b1.length);
+        // Generic method: works with different types
+        Test util = new Test("Utility");
 
-        b3 = null;
-        System.out.println("b2.length: " + b2.length);
+        System.out.println(util.isEqual("Hello", "Hello")); // true
+        System.out.println(util.isEqual(10, 20));           // false
+
+        // Java can infer a common supertype for both arguments, such as Object hence this will compile and return false
+        System.out.println(util.isEqual("Hello", 10));
     }
 }
 
-class Box {
-    int height;
-    int width;
-    int length;
 
-    public Box(int height, int width, int length) {
-        this.height = height;
-        this.width = width;
-        this.length = length;
-    }
-
-    int area() {
-        return this.height * this.length * this.width;
-    }
-}
