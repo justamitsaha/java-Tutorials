@@ -2,30 +2,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Test {
-
-    // Generic method
-    public <T> boolean isEqual(T a, T b) {
-        return a.equals(b);
-    }
-
-    // Generic constructor
-    public <T> Test(T value) {
-        System.out.println("Constructor called with: " + value);
-    }
-
     public static void main(String[] args) {
-        // Generic constructor: accepts different types
-        Test obj1 = new Test("Hello");
-        Test obj2 = new Test(100);
+        Employee employee = new Employee(50000, 28);
+        Response res  = new Response<>();
+        res.setResponse(employee);
+        res.setCode("200");
+        System.out.println(res);
+    }
+}
+class Response<T> {
 
-        // Generic method: works with different types
-        Test util = new Test("Utility");
+    private T response;
+    private String code;
+    public T getResponse() {
+        return response;
+    }
+    public void setResponse(T response) {
+        this.response = response;
+    }
+    public String getCode() {
+        return code;
+    }
+    public void setCode(String code) {
+        this.code = code;
+    }
+}
 
-        System.out.println(util.isEqual("Hello", "Hello")); // true
-        System.out.println(util.isEqual(10, 20));           // false
+class Employee {
+    int salary;
+    int age;
 
-        // Java can infer a common supertype for both arguments, such as Object hence this will compile and return false
-        System.out.println(util.isEqual("Hello", 10));
+    public Employee(int salary, int age) {
+        super();
+        this.salary = salary;
+        this.age = age;
     }
 }
 

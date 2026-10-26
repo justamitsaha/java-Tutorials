@@ -108,7 +108,19 @@ class Employee {
 }
 ```
 
-Notice the use of GenericsType class in the main method. We don’t need to do type-casting and we can remove ClassCastException at runtime. If we don’t provide the type at the time of creation, the compiler will produce a warning that “GenericsType is a raw type. References to generic type GenericsType<T> should be parameterized”. When we don’t provide the type, the type becomes Object and hence it can allow any data type like String and Integer. But, we should always try to avoid this because we will have to use type casting while working on raw type that can produce runtime errors.
+Notice the use of GenericsType class in the main method. We don’t need to do type-casting and we can remove ClassCastException at runtime. If we don’t provide the type at the time of creation in the main method ;ike below, the compiler will produce a warning that **GenericsType is a raw type. References to generic type GenericsType<T> should be parameterized**. When we don’t provide the type, the type becomes Object and hence it can allow any data type like String and Integer. But, we should always try to avoid this because we will have to use type casting while working on raw type that can produce runtime errors.
+
+```java
+public class Test {
+    public static void main(String[] args) {
+        Employee employee = new Employee(50000, 28);
+        Response res  = new Response<>();
+        res.setResponse(employee);
+        res.setCode("200");
+        System.out.println(res);
+    }
+}
+```
 
 Java Generic Type Naming convention helps us understanding code easily and having a naming convention is one of the best practices of Java programming language. So generics also comes with its own naming conventions. Usually, type parameter names are single, uppercase letters to make it easily distinguishable from java variables. The most commonly used type parameter names are:
 
