@@ -7,22 +7,37 @@ Upper bound wildcards are used when you want to specify that a parameterized typ
 Below method can accept a List<Integer>, List<Double> since these Classes extend java.lang.Number.
 
 ```java
-public class Test {
+public class Test{
     public static void main(String[] args) {
-        List<Integer> integers = List.of(1, 2, 3);
-        processNumbers(integers);
-        List<Float> floats = List.of(1.1f, 2f, 4.232f);
-        processNumbers(floats);
-        List<String> strings = List.of("I", "am", "Iron Man");
-        // processNumbers(strings);  this will  not compile as Sting does not extend Numbers
+        add(1,7);
+        //add(3.14f, 2.8f);
 
+
+        List<Integer> list = List.of(1,2,3);
+        List<Double> list2 = List.of(1d,2d,3d);
+        print(list);
+        print(list2);
+        List<String> strings = List.of("I", "am", "Iron Man");
+        // this will  not compile as Sting does not extend Numbers
+        // processNumbers(strings);
+        
     }
 
-    /*
-    Number is an abstract class which is extended by Integer, Float, Double
-     */
-    public static void processNumbers(List<? extends Number> numbers) {
-        numbers.forEach(System.out::println);
+    public static <T extends Integer> void add(T a, T b ){
+        System.out.println(a+b);
+    }
+
+    public static <T extends Number> void print(List<T> list){
+        for (T t : list) {
+            System.out.println(t);
+        }
+    }
+
+    //Or we can write the same function like this but we won't have access to type hence we have to use for loop
+    public static void print2(List<? extends Number> list){
+        for (int i = 0; i < list.size(); i++) {
+            System.out.println(list.get(i));
+        }
     }
 }
 
@@ -76,20 +91,37 @@ So, when we do below it will not compile. So, to maintain type safety, Java does
 But both can have different access. Hence to prevent ambiguity we only allow read operations and not write operations like adding to list. As by adding both developers and managers to List we can do incorrect operations like manangers trying to push code and developers giving change approvals
 
 ```java
-static void addToList(List<? extends Employee> list) {
-    // These will not compile because we don't know the exact type of the list.
-    // list.add(new Developer());
-    // list.add(new SeniorDev());
+public class Test{
+    public static void main(String[] args) {
+        List<? extends Employee> list = new ArrayList<>();
+        Employee emp = new Employee(22132, "harry");
+        Developer dev = new Developer(22132, "harry");
+        //❌ won't compile
+        //list.add(emp);
+        //list.add(dev);
+        // The list could be a List<Developer>, List<SeniorDev>, or another subtype of Employee. Adding a specific subtype could violate type safety.
+        // For example, if the list is a List<Developer>, adding a SeniorDev would be incorrect.
 
-    // The list could be a List<Developer>, List<SeniorDev>,
-    // or another subtype of Employee.
-    // Adding a specific subtype could violate type safety.
-    // For example, if the list is a List<Developer>,
-    // adding a SeniorDev would be incorrect.
 
-    for (Employee employee : list) {
-        System.out.println(employee);
+    }
+
+
+}
+
+class Employee {
+    int salary;
+    String name;
+
+    public Employee(int salary, String name) {
+        super();
+        this.salary = salary;
+        this.name = name;
     }
 }
 
+class Developer extends Employee{
+    public Developer(int salary, String name) {
+        super(salary, name);
+    }
+}
 ```
