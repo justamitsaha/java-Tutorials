@@ -166,9 +166,19 @@ public class Test {
         System.out.println(util.isEqual("Hello", 10));
     }
 }
+```
+Above examples are unbound. In Java generics, unbound means a type parameter or wild card has no restrivtion on what type it can represent.eg.
 
+```java
+List<?> list;
 ```
 
+or
+
+```java
+List<T> list;
+```
+ 
 Suppose we want to restrict the type of objects that can be used in the parameterized type, for example in a method that compares two objects and we want to make sure that the accepted objects are Comparables. To declare a bounded type parameter, list the type parameter’s name, followed by the extends keyword, followed by its upper bound, similar like below method.
 
 ```java
@@ -189,19 +199,26 @@ class Test {
         System.out.println("Compare Strings: " + compare("apple", "banana"));
         // ✅ Works because Integer implements Comparable<Integer>
         System.out.println("Compare Integers: " + compare(10, 20));
-        // ❌ Compile-time error: Person does not implement Comparable
-        // Person p1 = new Person("Amit");
-        // Person p2 = new Person("Saha");
-        // System.out.println(compare(p1, p2));
-        // Using bounded generic constructor (only Numbers allowed)
-        Test obj1 = new Test(123);
-        // BoundedGenericMethodExample obj2 = new BoundedGenericMethodExample("Hello");
-        // // ❌ error, not Number
+        Employee p1 = new Employee(50000, 28);
+        Employee p2 = new Employee(60000, 30);
+        // ❌ Compile-time error: Employee does not implement Comparable
+        //System.out.println(compare(p1, p2));
+    }
+}
+
+class Employee {
+    int salary;
+    int age;
+
+    public Employee(int salary, int age) {
+        super();
+        this.salary = salary;
+        this.age = age;
     }
 }
 ```
 
-The invocation of these methods is similar to unbounded method except that if we will try to use any class that is not Comparable, it will throw compile-time error. Bounded type parameters can be used with methods as well as classes and interfaces. Java Generics supports multiple bounds also, i.e <T extends A & B & C>. In this case, A can be an interface or class. If A is class then B and C should be an interface. We can’t have more than one class in multiple bounds. One example below where
+The invocation of these methods is similar to unbounded method except that if we will try to use any class that is not Comparable, **it will throw compile-time error**. Bounded type parameters can be used with methods as well as classes and interfaces. Java Generics supports multiple bounds also, i.e <T extends A & B & C>. In this case, A can be an interface or class. If A is class then B and C should be an interface. We can’t have more than one class in multiple bounds. One example below where
 
 - the getHigherPaid method of test class cam have arguments which extends Employee & Identifiable
 
