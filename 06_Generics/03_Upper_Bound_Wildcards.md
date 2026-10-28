@@ -80,9 +80,7 @@ public class Test {
 
 ```
 
-When using upper bound wildcards, you can only read from the collection, not write to it. This is because the compiler cannot guarantee the type safety of adding elements to the collection.
-
-So, when we do below it will not compile. So, to maintain type safety, Java does not allow adding elements to a list defined with an upper bounded wildcard.  Reason for this is ? extends Employee is a widening operation so the class getting allowed can have additional information. Lets see with an example. When we say ? extends Employee that means all sub class of Employee are allowed.
+When using upper bound wildcards, you can only read from the collection, not write to it. This is because the compiler cannot guarantee the type safety of adding elements to the collection To maintain type safety, Java does not allow adding elements to a list defined with an upper bounded wildcard.  Reason for this is ? extends Employee is a widening operation so the class getting allowed can have additional information. Lets see with an example. When we say ? extends Employee that means all sub class of Employee are allowed.
 
 - Developer extends employee
 
@@ -102,7 +100,21 @@ public class Test{
         // The list could be a List<Developer>, List<SeniorDev>, or another subtype of Employee. Adding a specific subtype could violate type safety.
         // For example, if the list is a List<Developer>, adding a SeniorDev would be incorrect.
 
+        //One can have a confussion that if I can't add to this list what is the point of having it?
+        // The point is that you can read from it. 
+        // You can safely read elements from the list, and they will be of type Employee or a subtype of Employee. 
+        // This is useful when you want to work with a collection of objects that share a common superclass but may have different specific types.    
 
+        List<Employee> employeeList = List.of(new Developer(50000, "Alice"), new Developer(60000, "Bob"));
+        printEmployeeDetails(employeeList);
+
+
+    }
+
+    public static void printEmployeeDetails(List<? extends Employee> list) {
+        for (Employee emp : list) {
+            System.out.println("Name: " + emp.name + ", Salary: " + emp.salary);
+        }
     }
 
 

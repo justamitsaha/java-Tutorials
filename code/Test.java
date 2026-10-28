@@ -1,38 +1,52 @@
 import java.util.ArrayList;
 import java.util.List;
 
-class Test {
-    // Bounded generic method - only works on Comparable types
-    public static <T extends Comparable<T>> int compare(T t1, T t2) {
-        return t1.compareTo(t2);
-    }
-
-    // Generic constructor with bounded type
-    public <T extends Number> Test(T value) {
-        System.out.println("Generic constructor with Number: " + value);
-    }
-
+public class Test{
     public static void main(String[] args) {
-        // ✅ Works because String implements Comparable<String>
-        System.out.println("Compare Strings: " + compare("apple", "banana"));
-        // ✅ Works because Integer implements Comparable<Integer>
-        System.out.println("Compare Integers: " + compare(10, 20));
-        Employee p1 = new Employee(50000, 28);
-        Employee p2 = new Employee(60000, 30);
-        // ❌ Compile-time error: Person does not implement Comparable
-        //System.out.println(compare(p1, p2));
+        List<? extends Developer> list = new ArrayList<>();
+        Employee emp = new Employee(22132, "harry");
+        Developer dev = new Developer(22132, "harry");
+        list.add(emp);
+        list.add(dev);
+        // The list could be a List<Developer>, List<SeniorDev>, or another subtype of Employee. Adding a specific subtype could violate type safety.
+        // For example, if the list is a List<Developer>, adding a SeniorDev would be incorrect.
+
+        //One can have a confussion that if I can't add to this list what is the point of having it?
+        // The point is that you can read from it. 
+        // You can safely read elements from the list, and they will be of type Employee or a subtype of Employee. 
+        // This is useful when you want to work with a collection of objects that share a common superclass but may have different specific types.    
+
+        List<Employee> employeeList = List.of(new Developer(50000, "Alice"), new Developer(60000, "Bob"));
+        printEmployeeDetails(employeeList);
+
+
     }
+
+    public static void printEmployeeDetails(List<? super Developer> list) {
+        for (Employee emp : list) {
+            System.out.println("Name: " + emp.name + ", Salary: " + emp.salary);
+        }
+    }
+
+
 }
 
 class Employee {
     int salary;
-    int age;
+    String name;
 
-    public Employee(int salary, int age) {
+    public Employee(int salary, String name) {
         super();
         this.salary = salary;
-        this.age = age;
+        this.name = name;
     }
 }
+
+class Developer extends Employee{
+    public Developer(int salary, String name) {
+        super(salary, name);
+    }
+}
+
 
 

@@ -1,39 +1,156 @@
-# New Date Time
+# Modern Date-Time API (`java.time`)
 
-With Java 8 new date time API was introduced which is much more robust. These introduced new classes under java.time package LocalDate, LocalTime, LocalDateTime and ZonedDateTime
+Java 8 introduced the `java.time` package (JSR-310). Its core design principles are:
+
+1. **Immutability & Thread Safety**: All core classes are immutable and thread-safe. Any modification method returns a new instance.
+2. **Clear Separation of Concerns**: Distinct classes for human-readable dates, times, combined date-times, machine timestamps, durations, and timezones.
+3. **Fluent API**: Consistent method naming prefixes (`of`, `now`, `from`, `with`, `plus`, `minus`, `at`, `to`, `is`).
 
 ![image52.png](../images/image52.png)
 
-Current date time
+---
 
-LocalDate localDate = LocalDate.now();LocalTime localTime = LocalTime.now();LocalDateTime localDateTime = LocalDateTime.now();ZonedDateTime zonedDateTime = ZonedDateTime.now();System.out.println(localDate);          ***//2024-12-19***System.out.println(localTime);          ***//13:35:56.964948500***System.out.println(localDateTime);      ***//2024-12-19T13:35:56.964948500***System.out.println(zonedDateTime);      ***//2024-12-19T13:35:56.964948500+05:30[Asia/Calcutta]***
+## 1. Core Local Classes
 
-**Of Method** To create date and time with specific values we need to use of method
+- **`LocalDate`**: Date without time or timezone (e.g., `2024-12-18`).
+- **`LocalTime`**: Time without date or timezone with nanosecond precision (e.g., `14:30:15.123456789`).
+- **`LocalDateTime`**: Combines date and time without timezone (e.g., `2024-12-18T14:30:15`).
+- **`ZonedDateTime`**: Date and time with a full timezone and DST rules (e.g., `2024-12-18T14:30:15+05:30[Asia/Kolkata]`).
 
-LocalDate date1 = LocalDate.of(2015, 3, 18);LocalDate date = LocalDate.of(2015, Month.MARCH, 18);   ***// Using Enums for months***LocalTime time = LocalTime.of(14, 30);          ***// Can support nanoseconds as well***LocalDateTime dateTime = LocalDateTime.of(2015,3,18,14,30);
+```java
+import java.time.*;
 
-ZoneId newYorkTimeZone = ZoneId.of("America/New_York");     ***//New York time zone***ZonedDateTime zonedDateTime = ZonedDateTime.of(2015,3,18,14,30,0, 0, newYorkTimeZone);System.out.println(date);System.out.println(time);System.out.println(dateTime);System.out.println(zonedDateTime);***//Some of the many utility methods***LocalDate someDate = LocalDate.ofEpochDay(1000);    ***//Date of no of days from Epoc date***LocalDate dayIn2000 = LocalDate.ofYearDay(2001, 100);   ***// 100th day of year 2001***System.out.println(someDate);System.out.println(dayIn2000);
+LocalDate date = LocalDate.now();
+LocalTime time = LocalTime.now();
+LocalDateTime dateTime = LocalDateTime.now();
+ZonedDateTime zonedDateTime = ZonedDateTime.now();
 
-**From method-**  It is a static method to extract date, time
+System.out.println(date);          // 2024-12-18
+System.out.println(time);          // 14:30:15.964948500
+System.out.println(dateTime);      // 2024-12-18T14:30:15.964948500
+System.out.println(zonedDateTime);  // 2024-12-18T14:30:15.964948500+05:30[Asia/Kolkata]
+```
 
-LocalDateTime dateTime = LocalDateTime.of(2015, Month.MARCH, 18, 22, 30);System.out.println(dateTime);LocalDate derivedDate = LocalDate.from(dateTime);LocalTime derivedTime = LocalTime.from(dateTime);System.out.println(derivedDate);System.out.println(derivedTime);
+---
 
-**With methods-** Local date time is immutable. So, when we need to change the date we can use “with” method. It’s not just applicable to LocalDateTime but is applicable to LocalDate, LocalTime etc.
+## 2. Instantiating Specific Values (`of` methods)
 
-LocalDateTime dateTime = LocalDateTime.of(2015, Month.MARCH, 18, 22, 30);System.out.println(dateTime);LocalDateTime dateTime1 = dateTime.withYear(2030);      ***// New Date by modifying year***LocalDateTime dateTime2 = dateTime.withYear(2030).withMonth(10); ***// New date by modifying year and month***System.out.println(dateTime1);System.out.println(dateTime2);
+```java
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
 
-**To And At methods** To methods helps to get LocalDate, time etc. from Date time object same we can do with from methods also
+// LocalDate using int or Month enum
+LocalDate d1 = LocalDate.of(2024, 12, 18);
+LocalDate d2 = LocalDate.of(2024, Month.DECEMBER, 18);
 
-LocalDateTime dateTime = LocalDateTime.of(2015, Month.MARCH, 18, 22, 30);System.out.println(dateTime);LocalDate date = dateTime.toLocalDate();LocalTime time = dateTime.toLocalTime();System.out.println(date);System.out.println(time);
+// LocalTime with hours, minutes, seconds, nanos
+LocalTime t1 = LocalTime.of(14, 30);
+LocalTime t2 = LocalTime.of(14, 30, 45, 500_000_000);
 
-**At Methods** will help us to create new date time objects from existing one by supplementing information, this may seem similar to with methods but there is a difference with methods will give same type of object, So date time will give date time object. But with method can give us different type if object for e.g. below we are getting object of LocalDateTime by applying with method to LocalDate
+// LocalDateTime combining components
+LocalDateTime dt1 = LocalDateTime.of(2024, Month.DECEMBER, 18, 14, 30);
+LocalDateTime dt2 = LocalDateTime.of(d1, t1);
 
-LocalDate localDate = LocalDate.of(2015, 3, 18);LocalDateTime startOfDay = localDate.atStartOfDay();        ***// Time will be midnight*** System.out.println(startOfDay);LocalDateTime localDateTime = localDate.atTime(18, 20); ***// Time will be as passed***System.out.println(localDateTime);
+// Utility factory methods
+LocalDate epochDay = LocalDate.ofEpochDay(1000);       // 1000 days after 1970-01-01
+LocalDate dayOfYear = LocalDate.ofYearDay(2024, 100);  // 100th day of 2024
+```
 
-**Get methods** will help us to get specific information like  year, month etc.
+---
 
-LocalDate localDate = LocalDate.of(2015, 3 , 18);*int* year = localDate.getYear(); ***// 2015***Month month = localDate.getMonth(); ***// MARCH****int* day  = localDate.getDayOfMonth();DayOfWeek dayOfWeek = localDate.getDayOfWeek();***// Monday Tuesday etc***
+## 3. Querying Information (`get` methods)
 
-**Plus minus methods** helps us to do addition subtraction to date time
+```java
+LocalDate date = LocalDate.of(2024, Month.DECEMBER, 18);
 
-LocalDate localDate = LocalDate.of(2015, 3 , 18);LocalDate ld1 = localDate.plusDays(6); ***// 2015-03-24***LocalDate ld2 = localDate.plusMonths(6); ***// 2015-09-18***LocalDate ld3 = localDate.plusWeeks(2); ***// 2015-04-01***LocalDate ld4 = localDate.minusMonths(9); ***// 2014-06-18***LocalDate ld5 = localDate.minusYears(7); ***// 2008-03-18***System.out.println(ld1);System.out.println(ld2);System.out.println(ld3);System.out.println(ld4);System.out.println(ld5);
+int year          = date.getYear();          // 2024
+Month month       = date.getMonth();         // Month.DECEMBER
+int monthVal      = date.getMonthValue();    // 12 (1-based, no +1 required!)
+int dayOfMonth    = date.getDayOfMonth();    // 18
+DayOfWeek dayWeek = date.getDayOfWeek();     // DayOfWeek.WEDNESDAY
+boolean isLeap    = date.isLeapYear();       // true
+```
+
+---
+
+## 4. Modifying Values (`with` methods)
+
+Because `java.time` classes are immutable, `with` methods return a modified copy:
+
+```java
+LocalDateTime original = LocalDateTime.of(2024, Month.DECEMBER, 18, 14, 30);
+
+// Modify individual fields
+LocalDateTime newYear  = original.withYear(2030);
+LocalDateTime newMonth = original.withMonth(5);
+LocalDateTime chained  = original.withYear(2030).withMonth(5).withDayOfMonth(1);
+
+System.out.println(original); // 2024-12-18T14:30 (unchanged)
+System.out.println(chained);  // 2030-05-01T14:30
+```
+
+---
+
+## 5. Combining and Converting (`at` and `to` methods)
+
+- **`at...`**: Creates a higher-level or supplemented type by adding missing information.
+- **`to...`**: Extracts a lower-level component from a composite object.
+
+```java
+LocalDate date = LocalDate.of(2024, 12, 18);
+
+// Add time to LocalDate to get LocalDateTime
+LocalDateTime startOfDay = date.atStartOfDay();      // 2024-12-18T00:00
+LocalDateTime withTime   = date.atTime(18, 45);      // 2024-12-18T18:45
+
+// Extract components from LocalDateTime
+LocalDateTime dt = LocalDateTime.of(2024, 12, 18, 18, 45);
+LocalDate extractedDate = dt.toLocalDate();          // 2024-12-18
+LocalTime extractedTime = dt.toLocalTime();          // 18:45
+```
+
+---
+
+## 6. Date Arithmetic (`plus` & `minus`)
+
+```java
+LocalDate date = LocalDate.of(2024, 3, 18);
+
+LocalDate plusDays   = date.plusDays(6);     // 2024-03-24
+LocalDate plusWeeks  = date.plusWeeks(2);    // 2024-04-01
+LocalDate plusMonths = date.plusMonths(6);   // 2024-09-18
+LocalDate minusYears = date.minusYears(4);   // 2020-03-18
+```
+
+---
+
+## 7. Comparison Methods
+
+```java
+LocalDate d1 = LocalDate.of(2024, 1, 1);
+LocalDate d2 = LocalDate.of(2024, 12, 31);
+
+System.out.println(d1.isBefore(d2)); // true
+System.out.println(d1.isAfter(d2));  // false
+System.out.println(d1.isEqual(d2));  // false
+```
+
+---
+
+## 8. TemporalAdjusters
+
+The `TemporalAdjusters` utility class provides common calendar adjustments:
+
+```java
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+
+LocalDate date = LocalDate.of(2024, 12, 18);
+
+LocalDate firstDayOfMonth = date.with(TemporalAdjusters.firstDayOfMonth());      // 2024-12-01
+LocalDate lastDayOfMonth  = date.with(TemporalAdjusters.lastDayOfMonth());       // 2024-12-31
+LocalDate nextFriday      = date.with(TemporalAdjusters.next(DayOfWeek.FRIDAY)); // 2024-12-20
+```

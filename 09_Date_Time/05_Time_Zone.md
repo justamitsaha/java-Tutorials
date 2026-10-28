@@ -1,16 +1,96 @@
-# Time Zone
+# TimeZone (`java.util.TimeZone`)
 
-Time zone is supported by class TimeZone. Below will list all available time zones
+`java.util.TimeZone` represents a time zone offset and calculates Daylight Saving Time (DST) rules in the legacy Date-Time API.
+
+---
+
+## 1. Inspecting Available Time Zones
 
 ```java
-public static void main(String[] args) {    String[] timeZoneIds = TimeZone.getAvailableIDs();    for(String timeZoneId : timeZoneIds){        System.out.println(timeZoneId);     // Will print all the time zones    }}
+import java.util.TimeZone;
 
+public class TimeZoneListing {
+    public static void main(String[] args) {
+        // Default JVM time zone
+        TimeZone defaultZone = TimeZone.getDefault();
+        System.out.println("Default: " + defaultZone.getID());
+
+        // List all available zone IDs (e.g., "America/New_York", "Asia/Kolkata", "UTC")
+        String[] ids = TimeZone.getAvailableIDs();
+        System.out.println("Total zones supported: " + ids.length);
+    }
+}
 ```
 
-Get time zone with date API
+---
 
-SimpleDateFormat dateFormat = *new* SimpleDateFormat("yyyy-MMMM-dd HH:mm:ss");dateFormat.setTimeZone(TimeZone.getTimeZone("America/New_York"));String formattedDate = dateFormat.format(*new* Date());System.out.println(formattedDate);dateFormat.setTimeZone(TimeZone.getTimeZone("Europe/Vatican"));formattedDate = dateFormat.format(*new* Date());System.out.println(formattedDate)
+## 2. Formatting Date with Time Zones
 
-Get time zone with Gregorian calendar+. We can’t pass getTime method directly as it will local zone time and time zone will be discarded
+`java.util.Date` itself holds **no timezone**—it only represents milliseconds since epoch. To display a `Date` in a specific timezone, set the zone on `SimpleDateFormat`:
 
-GregorianCalendar gregorianCalendar = *new* GregorianCalendar(TimeZone.getTimeZone("America/New_York"));*int* year = gregorianCalendar.get(Calendar.YEAR);*int* month = gregorianCalendar.get(Calendar.MONTH);*int* date = gregorianCalendar.get(Calendar.DATE);*int* hour = gregorianCalendar.get(Calendar.HOUR_OF_DAY);*int* minutes = gregorianCalendar.get(Calendar.MINUTE);*int* seconds = gregorianCalendar.get(Calendar.SECOND);*int* milliSeconds = gregorianCalendar.get(Calendar.MILLISECOND);System.out.printf("Current Date and Time in : %04d-%02d-%02d %02d:%02d:%02d:%04d%n",        year, month, date, hour, minutes, seconds,milliSeconds);***// New york time***System.out.println(gregorianCalendar.getTime()); ***//This will not give time zone specific time***
+```java
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+
+public class TimeZoneFormat {
+    public static void main(String[] args) {
+        Date now = new Date();
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+
+        // Format in New York time
+        sdf.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+        System.out.println("New York: " + sdf.format(now));
+
+        // Format in UTC
+        sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+        System.out.println("UTC:      " + sdf.format(now));
+
+        // Format in Tokyo time
+        sdf.setTimeZone(TimeZone.getTimeZone("Asia/Tokyo"));
+        System.out.println("Tokyo:    " + sdf.format(now));
+    }
+}
+```
+
+---
+
+## 3. TimeZone with `Calendar` and a Common Pitfall
+
+When initializing a `GregorianCalendar` with a `TimeZone`, field getters reflect that timezone:
+
+```java
+import java.util.Calendar;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+
+public class CalendarTimeZone {
+    public static void main(String[] args) {
+        TimeZone nyZone = TimeZone.getTimeZone("America/New_York");
+        Calendar cal = new GregorianCalendar(nyZone);
+
+        // Fields reflect New York local time
+        int hour = cal.get(Calendar.HOUR_OF_DAY);
+        int minute = cal.get(Calendar.MINUTE);
+        System.out.printf("New York Time: %02d:%02d%n", hour, minute);
+
+        // PITFALL: calling cal.getTime() returns a java.util.Date!
+        // Printing it directly invokes Date.toString(), which prints in the local JVM timezone,
+        // appearing as though the timezone was ignored.
+        System.out.println("Raw Date toString: " + cal.getTime()); 
+    }
+}
+```
+
+---
+
+## 4. Modern Replacement: `ZoneId`
+
+In Java 8+, convert legacy `TimeZone` to modern `ZoneId`:
+
+```java
+import java.time.ZoneId;
+import java.util.TimeZone;
+
+ZoneId zoneId = TimeZone.getTimeZone("America/New_York").toZoneId();
+```

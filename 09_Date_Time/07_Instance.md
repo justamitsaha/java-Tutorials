@@ -1,23 +1,115 @@
-# Instance
+# Instant and Duration (`java.time.Instant` & `java.time.Duration`)
 
-We as humans, we use date and time values, but for machines, the time is calculated based upon the number of seconds passed from the Unix epoch time. What is epoch time? The epoch time inside computers is represented by the time, which is midnight of January 1st, 1970, UTC.
+While classes like `LocalDate` represent human-centric dates, machines track time as a continuous timeline of nanoseconds measured from the **Unix Epoch** (January 1, 1970, 00:00:00 UTC).
 
 ![image53.png](../images/image53.png)
 
-If you try to look at this representation, this zero represents the epoch time, which is midnight of January first, 1970, UTC. After this epoch time, we have various numbers like 1, 2, 3, 4. For each of these numbers, they represent the number of nanoseconds passed from the epoch time. If you try to travel on to the right-hand side, all the nanosecond numbers will be positive. Whereas if you try to travel on to the left-hand side, which is before epoch time, all the numbers are going to be represented with the help of negative numbers.
+---
 
-Each of these numbers inside the timeline, represents an instant time from the epoch time. That is each instance is nano second which is represented by Instant class in Java.  Duration class is used to identify the duration of time between two instances.
+## 1. `Instant` (Machine Timestamp)
 
-For example, between 3 and 11 the duration, it is going to be 8 nanoseconds.
+An `Instant` represents a specific point on the machine timeline in UTC with nanosecond precision.
+
+```java
+import java.time.Instant;
+
+// Current UTC timestamp
+Instant now = Instant.now();
+System.out.println(now); 
+// e.g., 2024-12-18T08:05:30.123456789Z
+
+// Creating from epoch seconds / milliseconds
+Instant fromSec = Instant.ofEpochSecond(1000);
+Instant fromMilli = Instant.ofEpochMilli(System.currentTimeMillis());
+
+// Extracting components:
+long epochSeconds = now.getEpochSecond(); // Total whole seconds from 1970-01-01T00:00:00Z
+int nanosOfSecond = now.getNano();        // Fractional nanoseconds within the second (0 - 999,999,999)
+
+System.out.println("Epoch seconds: " + epochSeconds);
+System.out.println("Nanos of second: " + nanosOfSecond);
+```
+
+> [!NOTE]
+> `getNano()` does **not** return the time since the object was created or total nanos from epoch; it returns the sub-second fractional nanosecond portion (`0` to `999,999,999`).
+
+---
+
+## 2. `Duration` (Time-Based Amount)
+
+`Duration` represents an amount of time measured in **seconds and nanoseconds** (time-based). It is used for fine-grained differences between two points in time (`Instant`, `LocalTime`, `LocalDateTime`).
 
 ![image54.png](../images/image54.png)
 
-Instant can be created like below with now method which will give current instant, but it will give normal Date format representation as toString method is overridden and provides this format
+### Creating Durations
 
-Instant i2 = Instant.now();System.out.println(i2);     // To String method of Instant will convert to readable format
+```java
+import java.time.Duration;
 
-Instant i1 = Instant.ofEpochSecond(1000);System.out.println(i1);     ***// Will give time 1000 second from Epoc time****long* seconds = i2.getEpochSecond();System.out.println(seconds);    ***//  No of seconds from Epoc time since the object was created****long* nanoSeconds = i2.getNano();    ***// Not no of nao seconds from epoc time***System.out.println(nanoSeconds);***// No of nanoseconds since the object i2 was created***
+Duration fiveDays    = Duration.ofDays(5);
+Duration tenMinutes = Duration.ofMinutes(10);
+Duration thirtySecs  = Duration.ofSeconds(30);
+Duration negativeSec = Duration.ofSeconds(-13);
+```
 
-Duration cane created like below and it can be added to instant to created new instant
+### Measuring Difference Between Instants
 
-Instant i1 = Instant.ofEpochSecond(1000);System.out.println(i1);     ***// Will give time 1000 second from Epoc time***Instant i2 = Instant.now();System.out.println(i2);     ***// To String method of Instant will convert to readable format***Duration d1 = Duration.ofDays(5);Duration d2 = Duration.ofMinutes(10);Duration d3 = Duration.ofSeconds(30);Duration d4 = Duration.ofSeconds(-13);Duration d5 = d3.plus(d4);Instant i3 = i1.plus(d1);   ***//add duration to instant***Instant i4 = i2.minus(d2);  ***//Subtract duration from instant***System.out.println(i3);System.out.println(i4);*boolean* isAfter = i3.isAfter(i4); ***// false****boolean* isBefore = i3.isBefore(i4); ***// true***Duration duration = Duration.between(i1, i3);System.out.println(duration);***// PT120H 120 hours***
+```java
+import java.time.Duration;
+import java.time.Instant;
+
+Instant start = Instant.now();
+// simulate task
+Instant end = start.plus(Duration.ofMinutes(120));
+
+Duration diff = Duration.between(start, end);
+System.out.println(diff); // PT2H (ISO-8601 format: Period of Time 2 Hours)
+
+System.out.println("Total seconds: " + diff.toSeconds()); // 7200
+System.out.println("Total minutes: " + diff.toMinutes()); // 120
+System.out.println("Total hours:   " + diff.toHours());   // 2
+```
+
+---
+
+## 3. Arithmetic with `Instant` and `Duration`
+
+```java
+import java.time.Duration;
+import java.time.Instant;
+
+Instant timestamp = Instant.now();
+
+// Adding and subtracting duration
+Instant future = timestamp.plus(Duration.ofDays(3));
+Instant past   = timestamp.minus(Duration.ofHours(5));
+
+// Comparing instants
+System.out.println(future.isAfter(past));  // true
+System.out.println(past.isBefore(future)); // true
+```
+
+---
+
+## 4. Scaling and Truncating `Duration`
+
+```java
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
+
+Duration base = Duration.ofMinutes(30); // PT30M
+
+// Scaling methods
+Duration tripled = base.multipliedBy(3); // PT1H30M
+Duration halved  = base.dividedBy(2);    // PT15M
+Duration negated = base.negated();       // PT-30M
+
+// Truncating precision
+Duration complex = Duration.ofDays(1)
+        .plusHours(6)
+        .plusMinutes(45)
+        .plusSeconds(30); // PT30H45M30S
+
+Duration truncatedHours   = complex.truncatedTo(ChronoUnit.HOURS);   // PT30H
+Duration truncatedMinutes = complex.truncatedTo(ChronoUnit.MINUTES); // PT30H45M
+```
