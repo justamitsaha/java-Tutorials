@@ -1,139 +1,182 @@
-# Upper Bound Wildcards
+# Upper Bound Wildcards (`? extends T`)
 
-Upper bound wildcards in Java are a feature of generics that allow greater flexibility when working with generic types. They are denoted by the <? extends T> syntax, where T is a specific type.
+An upper-bounded wildcard specifies that the unknown type must be `T` or a **subtype** of `T`.
 
-Upper bound wildcards are used when you want to specify that a parameterized type may be any subtype of a certain type. For instance, if you have a method that accepts a List of any type that is a subtype of Number, you can use an upper bound wildcard to indicate this:
+$$\text{Syntax: } <? \text{ extends } T>$$
 
-Below method can accept a List<Integer>, List<Double> since these Classes extend java.lang.Number.
+---
 
-```java
-public class Test{
-    public static void main(String[] args) {
-        add(1,7);
-        //add(3.14f, 2.8f);
+## 1. Hierarchy Example
 
+Given the class hierarchy:
 
-        List<Integer> list = List.of(1,2,3);
-        List<Double> list2 = List.of(1d,2d,3d);
-        print(list);
-        print(list2);
-        List<String> strings = List.of("I", "am", "Iron Man");
-        // this will  not compile as Sting does not extend Numbers
-        // processNumbers(strings);
-        
-    }
+$$\text{Human} \longleftarrow \text{Employee} \longleftarrow \text{Developer} \longleftarrow \text{SeniorDev}$$
 
-    public static <T extends Integer> void add(T a, T b ){
-        System.out.println(a+b);
-    }
+A parameter of type `List<? extends Employee>` accepts:
+- `List<Employee>`
+- `List<Developer>`
+- `List<SeniorDev>`
 
-    public static <T extends Number> void print(List<T> list){
-        for (T t : list) {
-            System.out.println(t);
-        }
-    }
-
-    //Or we can write the same function like this but we won't have access to type hence we have to use for loop
-    public static void print2(List<? extends Number> list){
-        for (int i = 0; i < list.size(); i++) {
-            System.out.println(list.get(i));
-        }
-    }
-}
-
-```
-
-Another example using custom class
+It **rejects** `List<Human>` because `Human` is a supertype, not a subtype of `Employee`.
 
 ```java
-class Human {
-}
-
-class Employee extends Human {
-}
-
-class Developer extends Employee {
-}
-
-class SeniorDev extends Developer {
-}
+import java.util.ArrayList;
+import java.util.List;
 
 public class Test {
     public static void main(String[] args) {
-        List<Developer> list = new ArrayList<>();
-        print(list);
+        List<Developer> devList = List.of(new Developer(70000, "Alice"), new Developer(80000, "Bob"));
+        List<SeniorDev> seniorList = List.of(new SeniorDev(120000, "Charlie"));
+        List<Human> humanList = List.of(new Human("Dave"));
 
-        List<SeniorDev> seniorDevs = new ArrayList<>();
-        print(seniorDevs);
+        // ✅ Allowed: Developer and SeniorDev extend Employee
+        printEmployees(devList);
+        printEmployees(seniorList);
 
-        List<Human> humans = new ArrayList<>();
-        //print(humans); will not compile as humans don't extend Employee
-
+        // ❌ Compile error: Human does not extend Employee
+        // printEmployees(humanList);
     }
 
-    static void print(List<? extends Employee> list) {
-        for (Employee employee : list) {
-            System.out.println(employee);
+    public static void printEmployees(List<? extends Employee> list) {
+        for (Employee emp : list) {
+            System.out.println(emp.name + " earns " + emp.salary);
         }
     }
 }
 
+class Human {
+    String name;
+    public Human(String name) { this.name = name; }
+}
+
+class Employee extends Human {
+    int salary;
+    public Employee(int salary, String name) {
+        super(name);
+        this.salary = salary;
+    }
+}
+
+class Developer extends Employee {
+    public Developer(int salary, String name) { super(salary, name); }
+}
+
+class SeniorDev extends Developer {
+    public SeniorDev(int salary, String name) { super(salary, name); }
+}
 ```
 
-When using upper bound wildcards, you can only read from the collection, not write to it. This is because the compiler cannot guarantee the type safety of adding elements to the collection To maintain type safety, Java does not allow adding elements to a list defined with an upper bounded wildcard.  Reason for this is ? extends Employee is a widening operation so the class getting allowed can have additional information. Lets see with an example. When we say ? extends Employee that means all sub class of Employee are allowed.
+---
 
-- Developer extends employee
+## 2. Why Upper Bounds Are Read-Only (Producer Rule)
 
-- Manager also extends employee
-
-But both can have different access. Hence to prevent ambiguity we only allow read operations and not write operations like adding to list. As by adding both developers and managers to List we can do incorrect operations like manangers trying to push code and developers giving change approvals
+When you have a collection typed as `List<? extends Employee>`, you can **read** from it, but you **cannot write** to it (except `null`):
 
 ```java
-public class Test{
+import java.util.ArrayList;
+import java.util.List;
+
+public class Test {
     public static void main(String[] args) {
-        List<? extends Employee> list = new ArrayList<>();
-        Employee emp = new Employee(22132, "harry");
-        Developer dev = new Developer(22132, "harry");
-        //❌ won't compile
-        //list.add(emp);
-        //list.add(dev);
-        // The list could be a List<Developer>, List<SeniorDev>, or another subtype of Employee. Adding a specific subtype could violate type safety.
-        // For example, if the list is a List<Developer>, adding a SeniorDev would be incorrect.
+        List<? extends Employee> list = new ArrayList<Developer>();
 
-        //One can have a confussion that if I can't add to this list what is the point of having it?
-        // The point is that you can read from it. 
-        // You can safely read elements from the list, and they will be of type Employee or a subtype of Employee. 
-        // This is useful when you want to work with a collection of objects that share a common superclass but may have different specific types.    
+        // ❌ CANNOT WRITE:
+        // list.add(new Developer(50000, "Harry")); // Compile error!
+        // list.add(new Employee(40000, "Ron"));     // Compile error!
 
-        List<Employee> employeeList = List.of(new Developer(50000, "Alice"), new Developer(60000, "Bob"));
-        printEmployeeDetails(employeeList);
-
-
+        // ✅ Reading is safe: elements are guaranteed to be at least Employee
+        list = List.of(new Developer(50000, "Harry"), new Employee(60000, "Ron"));
+        printEmployees(list);
     }
 
-    public static void printEmployeeDetails(List<? extends Employee> list) {
+    public static void printEmployees(List<? extends Employee> list) {
         for (Employee emp : list) {
-            System.out.println("Name: " + emp.name + ", Salary: " + emp.salary);
+            System.out.println(emp.name + ": " + emp.salary);
         }
     }
-
-
 }
 
 class Employee {
     int salary;
     String name;
-
-    public Employee(int salary, String name) {
-        super();
-        this.salary = salary;
-        this.name = name;
-    }
+    public Employee(int salary, String name) { this.salary = salary; this.name = name; }
 }
 
-class Developer extends Employee{
-    public Developer(int salary, String name) {
-        super(salary, name);
+class Developer extends Employee {
+    public Developer(int salary, String name) { super(salary, name); }
+}
+```
+
+### Why Adding is Prohibited:
+The variable `list` could reference an `ArrayList<SeniorDev>`. If the compiler allowed adding an ordinary `Developer` or `Employee`, it would corrupt type safety for that `ArrayList<SeniorDev>`. Because the compiler cannot know the actual runtime subtype, all additions are rejected at compile time.
+
+---
+
+## 3. Named `<T extends Bound>` vs Wildcard `List<? extends Bound>`
+
+Upper bound wild card be implemented in 2 ways
+- Use **Wildcard (`? extends`)**: When the method is purely a consumer of data and the return type does not depend on the specific type argument.
+- Use **Named `<T>`**: When you need to return elements with their exact specific type or link multiple arguments.
+
+```java
+import java.util.List;
+
+public class Test {
+    public static void main(String[] args) {
+        List<Integer> intList = List.of(10, 50, 20);
+
+        // Named T preserves return type as Integer
+        Integer max = findMax(intList);
+        System.out.println("Max: " + max);
+
+        // Wildcard works cleanly for read-only iteration
+        printNumbers(intList);
+    }
+
+    // Named T: return type must match the specific element type
+    public static <T extends Comparable<T>> T findMax(List<T> list) {
+        T max = list.get(0);
+        for (T item : list) {
+            if (item.compareTo(max) > 0) 
+                max = item;
+        }
+        return max;
+    }
+
+    // Wildcard: cleaner for read-only arguments where return type does not depend on T
+    public static void printNumbers(List<? extends Number> list) {
+        for (Number n : list) {
+            System.out.println(n);
+        }
+    }
+}
+```
+
+---
+
+## 4. Nested Bounds
+
+Wildcards can be nested to handle multi-dimensional collections:
+
+```java
+import java.util.List;
+
+public class Test {
+    public static void main(String[] args) {
+        List<List<Integer>> matrix = List.of(
+            List.of(1, 2, 3),
+            List.of(4, 5, 6)
+        );
+        processMatrix(matrix);
+    }
+
+    public static void processMatrix(List<? extends List<? extends Number>> matrix) {
+        for (List<? extends Number> row : matrix) {
+            for (Number n : row) {
+                System.out.print(n + " ");
+            }
+            System.out.println();
+        }
     }
 }
 ```

@@ -58,6 +58,7 @@ A comprehensive, structured Java tutorial repository covering core Java concepts
 - [Upper Bound Wildcards](./06_Generics/03_Upper_Bound_Wildcards.md)
 - [Lower Bounded Wildcards](./06_Generics/04_Lower_Bounded_Wildcards.md)
 - [Unbounded Wildcards](./06_Generics/05_Unbounded_Wildcards.md)
+- [Generics Questions](./06_Generics/09_Questions.md)
 
 ### [07. Error & Exception](./07_Error_and_Exception/)
 - [Error & Exception Overview](./07_Error_and_Exception/01_Error_and_Exception_Overview.md)

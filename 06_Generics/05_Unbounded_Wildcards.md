@@ -1,55 +1,115 @@
-# Unbounded Wildcards
+# Unbounded Wildcards (`<?>`) & PECS
 
-Unbounded wildcards, denoted by the question mark (?), allow flexibility by accepting any type. They are particularly useful when the code doesn't rely on the specific type of objects in a generic class or method.
+An unbounded wildcard specifies an unknown type.
 
-List<?>
+$$\text{Syntax: } <?>$$
 
-When the code is agnostic about the type: If the code doesn't depend on the specific type of objects in a generic class or method, unbounded wildcards can be used to provide flexibility.
+---
 
-When working with collections of unknown types: When dealing with collections where the type of elements is unknown or irrelevant, unbounded wildcards can be used to ensure compatibility
+## 1. When to Use `List<?>`
 
-You use <?> when your code does **not depend** on the actual type parameter.
-
-You want to **read** from a collection (but not add arbitrary elements).
-
-You just need to **treat values generically** (e.g., print them, count them).
+Use `List<?>` when:
+1. The method only uses operations provided by `java.lang.Object` (e.g., printing elements).
+2. The method depends solely on the container itself, not the element type (e.g., `list.size()`, `list.clear()`).
 
 ```java
-public static void printList(List<?> list) {
-for (Object element : list) {  // all elements are treated as Object
-System.out.println(element);
+import java.util.ArrayList;
+import java.util.List;
+
+public class Test {
+    public static void main(String[] args) {
+        List<String> strings = new ArrayList<>(List.of("A", "B", "C"));
+        List<Integer> numbers = new ArrayList<>(List.of(1, 2, 3));
+
+        // Accepts any List type
+        printList(strings);
+        printList(numbers);
+
+        // ❌ List<Object> is invariant: does NOT accept List<String>
+        // printObjects(strings); // Compile error!
+        printObjects(List.of(new Object(), new Object())); // Only accepts List<Object>
+
+        // Write restriction:
+        List<?> wildcardList = strings;
+        // wildcardList.add("D"); // ❌ Compile error: cannot write to List<?>
+        wildcardList.add(null);   // ✅ Only literal null is allowed
+    }
+
+    // Unbounded wildcard: accepts any List
+    public static void printList(List<?> list) {
+        for (Object item : list) { // Safe to read as Object
+            System.out.println(item);
+        }
+    }
+
+    // Invariant: strictly accepts List<Object>
+    public static void printObjects(List<Object> list) {
+        for (Object item : list) {
+            System.out.println(item);
+        }
+    }
+}
 ```
 
-}
+---
 
-}
+## 2. Comparing `List<?>`, `List<Object>`, and `List<T>`
+
+| Type | Acceptance | Read Guarantee | Write Allowed |
+| :--- | :--- | :--- | :--- |
+| **`List<?>`** | Any `List<X>` | `Object` | Only `null` |
+| **`List<Object>`** | Only `List<Object>` | `Object` | Any `Object` |
+| **`List<T>`** | Any specific type `T` | Type `T` | Type `T` |
+
+---
+
+## 3. Wildcard Capture & Helper Methods
+
+When the compiler encounters a wildcard, it assigns an internal placeholder known as a **capture of `?`**. Because the compiler cannot verify that two captured types match, you cannot write a read value back into an unbounded wildcard collection:
 
 ```java
-public static void main(String[] args) {
+public static void swap(List<?> list, int i, int j) {
+    // ❌ Compile error: capture of ? cannot be converted to capture of ?
+    // list.set(i, list.get(j)); 
+}
 ```
 
-List<String> strings = List.of("A", "B", "C");
-
-List<Integer> numbers = List.of(1, 2, 3);
-
-printList(strings);
-
-printList(numbers);
-
-}
+### The Solution: Private Generic Helper Method
+Delegate to a private method with a formal type parameter `<T>` that "captures" the wildcard:
 
 ```java
-public static void addElement(List<?> list) {
+import java.util.ArrayList;
+import java.util.List;
+
+public class Test {
+    public static void main(String[] args) {
+        List<String> names = new ArrayList<>(List.of("Alice", "Bob", "Charlie"));
+        System.out.println("Before swap: " + names);
+
+        swap(names, 0, 2);
+        System.out.println("After swap:  " + names);
+    }
+
+    // Public API uses clean wildcard
+    public static void swap(List<?> list, int i, int j) {
+        swapHelper(list, i, j); // Wildcard captured as type T
+    }
+
+    // Helper captures the type parameter T
+    private static <T> void swapHelper(List<T> list, int i, int j) {
+        T temp = list.get(i);
+        list.set(i, list.get(j));
+        list.set(j, temp);
+    }
+}
 ```
 
-// list.add("Hello");   ❌ Compile error
+---
 
-}
+## 4. The PECS Principle Summary
 
-Why? Because <?> means "unknown type".
+$$\boxed{\textbf{P}\text{roducer } \textbf{E}\text{xtends, } \textbf{C}\text{onsumer } \textbf{S}\text{uper}}$$
 
-It could be List<String>, List<Integer>, or List<Box>.
-
-Java prevents adding because it can’t guarantee type safety.
-
-The only thing you can safely add is null.
+- **Producer (`? extends T`)**: Use when your method only **reads** data from the collection.
+- **Consumer (`? super T`)**: Use when your method only **writes** data into the collection.
+- **Both**: If you need to **both read from and write to** the collection, use an exact type parameter (`<T>`), not a wildcard.

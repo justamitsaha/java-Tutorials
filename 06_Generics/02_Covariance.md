@@ -1,58 +1,81 @@
-# Covariance
+# Covariance & Invariance
 
-Covariance is a concept in object-oriented programming that allows a subclass to override a method in its superclass with a return type that is a subclass of the return type of the superclass method. This enables more flexibility in method overriding and allows for a more specific return type in the subclass.
+Covariance and invariance describe how subtyping between more complex types relates to subtyping between their component types.
 
-In this example, the makeSound() method in the Dog class overrides the same method in the Animal class with a more specific return type (Dog).
+---
+
+## 1. Method Return Type Covariance (OOP)
+
+In method overriding, Java allows the subclass method to return a more specific subtype than the superclass method:
 
 ```java
+public class Test {
+    public static void main(String[] args) {
+        Animal animal = new Dog();
+        Animal result = animal.makeSound(); // Invokes Dog.makeSound()
+        System.out.println("Returned type: " + result.getClass().getSimpleName()); // Dog
+    }
+}
+
 class Animal {
     Animal makeSound() {
-        System.out.println("Some sound");
+        System.out.println("Some animal sound");
         return new Animal();
     }
 }
 
 class Dog extends Animal {
     @Override
-    Dog makeSound() {       // This is overriding Parent and returning a subclass
+    Dog makeSound() { // Covariant return: Dog is a subtype of Animal
         System.out.println("Woof");
         return new Dog();
     }
 }
+```
+
+---
+
+## 2. Generics Invariance vs Array Covariance
+
+In Java, **arrays are covariant**, but **generics are invariant**:
+
+- **Array Covariance**: `Integer[]` is a subtype of `Number[]`.
+  - Flaw: Compiles, but throws `ArrayStoreException` at runtime if an incompatible object is stored.
+- **Generics Invariance**: `List<Integer>` is **NOT** a subtype of `List<Number>`.
+  - Benefit: Caught at compile time. Prevents corrupted collections (heap pollution).
+
+```java
+import java.util.ArrayList;
+import java.util.List;
 
 public class Test {
     public static void main(String[] args) {
-        Animal animal = new Dog();
-        animal.makeSound();
+        // 1. Array Covariance: Fails at runtime
+        Number[] numArray = new Integer[3];
+        Object[] objArray = numArray; // Allowed because arrays are covariant
+        try {
+            objArray[0] = "A String"; // Compiles, but throws ArrayStoreException at runtime!
+        } catch (ArrayStoreException e) {
+            System.out.println("Caught expected ArrayStoreException: " + e.getMessage());
+        }
+
+        // 2. Generics Invariance: Fails safely at compile time
+        List<String> strList = new ArrayList<>();
+        // List<Object> objList = strList; // ❌ Compile error: incompatible types!
+
+        // Why invariance is required:
+        // If objList = strList were allowed:
+        // objList.add(100); // 100 is an Integer (valid for List<Object>)
+        // String s = strList.get(0); // ClassCastException at runtime!
     }
 }
-
 ```
 
-But same thing is not allowed in Collections
+---
 
-```java
-public static void main(String[] args) {
-    String s = "Generics";
-    Object o = s;   // Will work
+## 3. Achieving Subtyping in Generics with Wildcards
 
-    String[] sArray = {"Generics", "Collections"};
-    Object[] objArray = sArray;    // Will work
+**IMP** Because `List<Integer>` cannot be assigned to `List<Number>`, a method taking `List<Number>` cannot accept `List<Integer>`. To allow subtyping at call sites, Java provides wildcards:
 
-    List<String> sList = new ArrayList<>();
-    List<Object> oList = new ArrayList<>();
-    oList = sList;      // This will no compile
-}
-
-```
-
-This has some disadvantages as we can see we can add String object in Numbers array. Initially in order to achieve polymorphism this covariance was added hence it is found in Arrays but then when the developers resailed it they did not allowed for Collections.
-
-```java
-public static void main(String[] args) {
-    Number[] numArray = {1, 2, 3};
-    Object[] objectArray = numArray; // Covariances accepted
-    objectArray[0] = "String";
-}
-
-```
+- **Covariance (read-only)**: `List<? extends Number>` accepts `List<Integer>`, `List<Double>`, etc.
+- **Contravariance (write-safe)**: `List<? super Integer>` accepts `List<Integer>`, `List<Number>`, `List<Object>`.
