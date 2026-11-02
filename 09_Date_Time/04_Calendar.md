@@ -1,101 +1,152 @@
 # Calendar (`java.util.Calendar` & `GregorianCalendar`)
 
-`java.util.Calendar` was introduced in Java 1.1 to overcome limitations of `java.util.Date`, particularly around field extraction (year, month, day), internationalization, and date arithmetic.
+`java.util.Calendar` was introduced in Java 1.1 to separate date calculations, field extractions (year, month, day), and internationalization from `java.util.Date`.
 
-`Calendar` is an abstract class. Its primary concrete implementation in Java standard library is `java.util.GregorianCalendar`.
+`Calendar` is an abstract class. In standard Java runtimes, `Calendar.getInstance()` returns a concrete `java.util.GregorianCalendar`.
 
 ---
 
-## 1. Creating Calendar Instances
+## 1. Creating and Inspecting `Calendar`
 
 ```java
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 
-// 1. Factory method (returns GregorianCalendar based on system locale and timezone)
-Calendar cal = Calendar.getInstance();
+public class Test {
+    public static void main(String[] args) {
+        // Factory method using default locale and JVM timezone
+        Calendar cal = Calendar.getInstance();
 
-// 2. Direct GregorianCalendar instantiation with specific values
-// NOTE: Months are 0-indexed (Calendar.JANUARY = 0)
-Calendar specificDate = new GregorianCalendar(2024, Calendar.DECEMBER, 18, 14, 30);
+        // Direct GregorianCalendar instantiation
+        // NOTE: Months are 0-indexed (Calendar.DECEMBER == 11)
+        Calendar specific = new GregorianCalendar(2024, Calendar.DECEMBER, 18, 14, 30, 0);
+
+        System.out.println("Calendar Class: " + cal.getClass().getName());
+        System.out.println("Specific Date:  " + specific.getTime());
+    }
+}
 ```
 
 ---
 
-## 2. Reading and Writing Fields (`get` & `set`)
+## 2. Field Access: `get()`, `set()`, and Zero-Based Months
 
-`Calendar` uses integer constants to access individual fields:
+`Calendar` uses integer constants for field indexing:
 
 ```java
-Calendar calendar = Calendar.getInstance();
+import java.util.Calendar;
 
-// Getting fields
-int year   = calendar.get(Calendar.YEAR);
-int month  = calendar.get(Calendar.MONTH);       // 0-based: 0 = Jan, 11 = Dec
-int day    = calendar.get(Calendar.DAY_OF_MONTH);
-int hour   = calendar.get(Calendar.HOUR_OF_DAY);  // 24-hour format
-int minute = calendar.get(Calendar.MINUTE);
-int second = calendar.get(Calendar.SECOND);
+public class Test {
+    public static void main(String[] args) {
+        Calendar cal = Calendar.getInstance();
 
-System.out.printf("Current: %04d-%02d-%02d %02d:%02d:%02d%n",
-        year, month + 1, day, hour, minute, second);
+        // Reading fields
+        int year   = cal.get(Calendar.YEAR);
+        int month  = cal.get(Calendar.MONTH);        // 0-indexed: 0 = Jan, 11 = Dec
+        int day    = cal.get(Calendar.DAY_OF_MONTH);
+        int hour24 = cal.get(Calendar.HOUR_OF_DAY);   // 24-hour clock (0-23)
+        int minute = cal.get(Calendar.MINUTE);
+        int second = cal.get(Calendar.SECOND);
 
-// Setting fields
-calendar.set(Calendar.YEAR, 2025);
-calendar.set(Calendar.MONTH, Calendar.JULY);
-calendar.set(Calendar.DAY_OF_MONTH, 1);
+        System.out.printf("Current: %04d-%02d-%02d %02d:%02d:%02d%n",
+                year, month + 1, day, hour24, minute, second);
+
+        // Setting fields (months require Calendar constants or 0-indexed int)
+        cal.set(Calendar.YEAR, 2025);
+        cal.set(Calendar.MONTH, Calendar.JULY);
+        cal.set(Calendar.DAY_OF_MONTH, 1);
+
+        System.out.println("Modified: " + cal.getTime());
+    }
+}
 ```
 
 ---
 
-## 3. Date Arithmetic (`add`)
+## 3. Date Arithmetic: `add()` vs `roll()`
 
-The `add()` method adjusts fields without requiring manual millisecond math:
+- **`add(field, amount)`**: Adjusts the field and cascades changes to larger calendar units (e.g., adding 30 days advances the month and possibly year).
+- **`roll(field, amount)`**: Adjusts the field **without** cascading changes to larger calendar units (e.g., rolling month from December to January does **not** change the year).
 
 ```java
-Calendar cal = Calendar.getInstance();
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
-// Add 2 hours
-cal.add(Calendar.HOUR_OF_DAY, 2);
+public class Test {
+    public static void main(String[] args) {
+        // 1. add() cascades up
+        Calendar calAdd = new GregorianCalendar(2024, Calendar.DECEMBER, 15);
+        calAdd.add(Calendar.DAY_OF_MONTH, 20); // 15 + 20 = 35 -> rolls to January 2025
+        System.out.println("After add:  " + calAdd.getTime()); // Jan 04, 2025
 
-// Subtract 3 months (automatically adjusts year if needed)
-cal.add(Calendar.MONTH, -3);
-
-// Add 10 days
-cal.add(Calendar.DAY_OF_MONTH, 10);
+        // 2. roll() does NOT cascade up
+        Calendar calRoll = new GregorianCalendar(2024, Calendar.DECEMBER, 15);
+        calRoll.roll(Calendar.MONTH, 1); // December (11) + 1 wraps to January (0), year stays 2024!
+        System.out.println("After roll: " + calRoll.getTime()); // Jan 15, 2024
+    }
+}
 ```
 
 ---
 
-## 4. Converting to `Date` and Leap Year Check
+## 4. Leniency Control: `setLenient(false)`
+
+By default, `Calendar` is **lenient**: passing invalid dates (e.g. February 30th) silently overflows into the next month. To enforce strict validation, set leniency to `false`:
 
 ```java
-Calendar calendar = Calendar.getInstance();
+import java.util.Calendar;
+import java.util.GregorianCalendar;
 
-// Convert Calendar to java.util.Date
-java.util.Date date = calendar.getTime();
+public class Test {
+    public static void main(String[] args) {
+        Calendar cal = new GregorianCalendar();
 
-// Leap year check via GregorianCalendar
-GregorianCalendar gc = new GregorianCalendar();
-boolean isLeap = gc.isLeapYear(2024); // true
-System.out.println("2024 is leap year: " + isLeap);
+        // Default: Lenient mode rolls invalid days forward
+        cal.set(2024, Calendar.FEBRUARY, 32);
+        System.out.println("Lenient: " + cal.getTime()); // Silent rollover to March 3, 2024
+
+        // Strict mode throws IllegalArgumentException upon computing time
+        cal.setLenient(false);
+        cal.set(2024, Calendar.FEBRUARY, 32);
+
+        try {
+            // Recalculates fields; throws exception
+            cal.getTime(); 
+        } catch (IllegalArgumentException e) {
+            System.out.println("Strict validation caught error: " + e.getMessage());
+        }
+    }
+}
 ```
 
 ---
 
 ## 5. Bridging `Calendar` with Modern `java.time`
 
-In Java 8+, convert `Calendar` directly to `ZonedDateTime` or `Instant`:
+Convert legacy `Calendar` to `Instant` or `ZonedDateTime` at application boundaries:
 
 ```java
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Calendar;
 
-Calendar cal = Calendar.getInstance();
+public class Test {
+    public static void main(String[] args) {
+        Calendar cal = Calendar.getInstance();
 
-// Calendar -> Instant -> ZonedDateTime
-ZonedDateTime zdt = cal.toInstant().atZone(cal.getTimeZone().toZoneId());
-System.out.println(zdt);
+        // 1. Calendar -> Instant
+        Instant instant = cal.toInstant();
+        System.out.println("Instant:       " + instant);
+
+        // 2. Calendar -> ZonedDateTime (preserves calendar timezone)
+        ZoneId zoneId = cal.getTimeZone().toZoneId();
+        ZonedDateTime zdt = instant.atZone(zoneId);
+        System.out.println("ZonedDateTime: " + zdt);
+
+        // 3. ZonedDateTime -> GregorianCalendar
+        Calendar backToCal = GregorianCalendar.from(zdt);
+        System.out.println("Back to Cal:   " + backToCal.getTime());
+    }
+}
 ```
-
-> [!NOTE]
-> Like `Date`, `Calendar` is **mutable** and **not thread-safe**. For new code, always prefer `java.time.LocalDate` and `java.time.ZonedDateTime`.

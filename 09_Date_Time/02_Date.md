@@ -1,104 +1,195 @@
 # Date (`java.util.Date` & `java.sql.Date`)
 
-The `java.util.Date` class represents a specific instant in time with millisecond precision, measured from the Unix epoch: **January 1, 1970, 00:00:00 UTC**.
+The `java.util.Date` class represents a specific instant in time with millisecond precision, measured from the Unix epoch: **January 1, 1970, 00:00:00 UTC**. Despite its name, it does not represent a "date" in the calendar sense; it stores a raw 64-bit integer (`long`) of elapsed milliseconds.
 
 ---
 
 ## 1. Creating and Inspecting `java.util.Date`
 
-The default constructor initializes the object with the current system time via `System.currentTimeMillis()`:
+The default constructor initializes the object with the current system time via `System.currentTimeMillis()`. The parameterized constructors that take year, month, and day are deprecated due to legacy offset conventions.
 
 ```java
 import java.util.Date;
 
-public class DateExample {
+public class Test {
     public static void main(String[] args) {
-        // Current date and time
-        Date currentDate = new Date();
-        System.out.println(currentDate); 
-        // e.g., Wed Dec 18 12:27:45 IST 2024
+        // Current date and time (wraps System.currentTimeMillis())
+        Date now = new Date();
+        System.out.println("Current Date: " + now); // Output formatted in JVM local timezone
 
-        // Milliseconds since Unix epoch (Jan 1, 1970 UTC)
-        long epochMillis = currentDate.getTime();
-        System.out.println(epochMillis); 
-        // e.g., 1734505065137
+        // Epoch millisecond timestamp
+        long epochMillis = now.getTime();
+        System.out.println("Epoch Millis: " + epochMillis);
+
+        // Construct from raw milliseconds
+        Date fromMillis = new Date(epochMillis);
+        System.out.println("From Millis:  " + fromMillis);
+
+        // Deprecated constructor: Year offset by 1900, 0-indexed month
+        @SuppressWarnings("deprecation")
+        Date legacy = new Date(124, 11, 18, 14, 30, 0); // 2024-12-18 14:30:00
+        System.out.println("Legacy:       " + legacy);
     }
 }
 ```
 
 ---
 
-## 2. Deprecated Constructors & Legacy Quirks
+## 2. Mutability & Defensive Copying
 
-Before Java 1.1 introduced `Calendar`, specific dates were constructed using year, month, and day. These constructors are deprecated due to confusing conventions:
+`java.util.Date` is **mutable**. Calling `setTime(long)` changes internal state in place. Exposing a `Date` reference directly across class boundaries breaks encapsulation:
+
+two Java concepts:
+
+1.  Mutability: An object can be modified after it has been created.
+2.  Defensive copying: Instead of sharing a reference to a mutable object, create and share a separate copy.
+
+### Mutability and Defensive Copying
+
+`java.util.Date` is mutable, meaning its internal state can be changed after creation using methods like `setTime()`.
+-   Order: Implements defensive copying in both the constructor (copy on write) and getter (copy on read). This prevents external code from modifying its internal state.
+-   Order2: Does not implement defensive copying. It exposes the original `Date` reference, allowing external code to modify its internal state.
+Key takeaway: Defensive copying protects encapsulation by preventing external modifications to an object's internal mutable state. `final` alone does not make an object immutable.
 
 ```java
-// Year is offset by 1900 (2024 - 1900 = 124)
-// Month is 0-indexed (0 = Jan, 11 = Dec)
-Date specificDate = new Date(124, 11, 18); // 18th December 2024, 00:00:00 local time
-System.out.println(specificDate);
-```
+import java.util.Date;
 
----
+public class Test {
+    public static void main(String[] args) {
+        Order order = new Order(new Date());
+        Order2 order2 = new Order2(new Date());
+        System.out.println("Original creation time: " + order.getCreationDate());
+        System.out.println("Original creation time (Order2): " + order2.getCreationDate());
+
+        // Mutating internal state if no defensive copy is performed:
+        Date leakedDate = order.getCreationDate();
+        Date leakedDate2 = order2.getCreationDate();
+        leakedDate.setTime(0L); // Resets to 1970-01-01 00:00:00 UTC!
+        leakedDate2.setTime(0L); // Resets to 1970-01-01 00:00:00 UTC!
+
+        // With defensive copying, the internal state remains intact:
+        System.out.println("After external mutation: " + order.getCreationDate());
+        System.out.println("After external mutation (Order2): " + order2.getCreationDate());
+    }
+}
+
+class Order {
+    private final Date creationDate;
+
+    public Order(Date creationDate) {
+        // Defensive copy on write
+        this.creationDate = new Date(creationDate.getTime());
+    }
+
+    public Date getCreationDate() {
+        // Defensive copy on read
+        return new Date(this.creationDate.getTime());
+    }
+}
+
+class Order2 {
+    private Date creationDate;
+
+    public Order2(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
+}
+```
 
 ## 3. Date Arithmetic & Comparison
 
-Because `Date` stores raw milliseconds, legacy calculations often manipulated timestamps directly:
+Legacy date calculations require direct millisecond manipulation. Comparisons are made using `before()`, `after()`, `equals()`, or `compareTo()`:
 
 ```java
-Date date = new Date();
+import java.util.Date;
 
-// Add 1 day in milliseconds (24 * 60 * 60 * 1000 = 86,400,000 ms)
-Date nextDay = new Date(date.getTime() + 86_400_000L);
+public class Test {
+    public static void main(String[] args) {
+        Date now = new Date();
 
-// Comparison methods
-System.out.println(date.before(nextDay)); // true
-System.out.println(date.after(nextDay));  // false
-System.out.println(date.compareTo(nextDay)); // negative integer (< 0)
+        // Add 24 hours in milliseconds (24 * 60 * 60 * 1000 = 86,400,000L)
+        Date tomorrow = new Date(now.getTime() + 86_400_000L);
+
+        // Comparison methods
+        System.out.println("now.before(tomorrow):    " + now.before(tomorrow));    // true
+        System.out.println("now.after(tomorrow):     " + now.after(tomorrow));     // false
+        System.out.println("now.compareTo(tomorrow): " + now.compareTo(tomorrow)); // negative integer (< 0)
+        System.out.println("now.equals(tomorrow):    " + now.equals(tomorrow));    // false
+    }
+}
 ```
-
-> [!WARNING]
-> `java.util.Date` is **mutable**. Methods like `setTime(long)` alter internal state in place, making instances dangerous to pass across threads or expose through getters without defensive copying.
 
 ---
 
 ## 4. `java.sql.Date` vs `java.util.Date`
 
-`java.sql.Date` extends `java.util.Date` and is tailored for JDBC database operations:
+`java.sql.Date` extends `java.util.Date` and is tailored for JDBC database operations to map to SQL `DATE` columns:
 
-- **Purpose**: Maps to the SQL `DATE` data type, which stores year, month, and day without time of day.
-- **Normalization**: The time component is zeroed out to midnight in the local timezone.
+- **Suppressed Time**: `java.sql.Date` zeroes out the hours, minutes, seconds, and milliseconds to midnight in the local timezone for its `toString()` method (`YYYY-MM-DD`).
+- **`toInstant()` Incompatibility**: Unlike `java.util.Date`, calling `toInstant()` directly on `java.sql.Date` throws an exception.
 
 ```java
-long millis = System.currentTimeMillis();
+import java.sql.Date;
+import java.time.LocalDate;
 
-java.util.Date utilDate = new java.util.Date(millis);
-java.sql.Date sqlDate = new java.sql.Date(millis);
+public class Test {
+    public static void main(String[] args) {
+        long millis = System.currentTimeMillis();
 
-System.out.println("util.Date : " + utilDate); // Wed Dec 18 12:27:45 IST 2024
-System.out.println("sql.Date  : " + sqlDate);  // 2024-12-18 (formatted as yyyy-mm-dd)
+        java.util.Date utilDate = new java.util.Date(millis);
+        java.sql.Date sqlDate = new java.sql.Date(millis);
+
+        System.out.println("util.Date toString(): " + utilDate); // Wed Dec 18 14:30:00 IST 2024
+        System.out.println("sql.Date  toString(): " + sqlDate);  // 2024-12-18
+
+        // Modern JDBC bridging: java.sql.Date <-> LocalDate
+        LocalDate localDate = sqlDate.toLocalDate();
+        Date backToSql = Date.valueOf(localDate);
+        System.out.println("Converted to LocalDate: " + localDate);
+        System.out.println("Converted back to SQL:  " + backToSql);
+
+        // ❌ Throws UnsupportedOperationException: java.sql.Date does not support toInstant()
+        // sqlDate.toInstant();
+    }
+}
 ```
 
 ---
 
 ## 5. Bridging Legacy `Date` with Modern `java.time`
 
-In modern Java applications, convert legacy `Date` objects to modern types immediately at API boundaries:
+In modern applications, convert legacy `Date` instances to `Instant` or `ZonedDateTime` immediately at API boundaries:
 
 ```java
 import java.time.Instant;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
-// 1. Date to Instant
-Date legacyDate = new Date();
-Instant instant = legacyDate.toInstant();
+public class Test {
+    public static void main(String[] args) {
+        Date legacyDate = new Date();
 
-// 2. Instant to Date
-Date backToDate = Date.from(instant);
+        // 1. java.util.Date -> Instant
+        Instant instant = legacyDate.toInstant();
+        System.out.println("Instant (UTC): " + instant);
 
-// 3. java.sql.Date to LocalDate (and vice versa)
-java.sql.Date sqlDate = java.sql.Date.valueOf("2024-12-18");
-LocalDate localDate = sqlDate.toLocalDate();
-java.sql.Date backToSql = java.sql.Date.valueOf(localDate);
+        // 2. Instant -> java.util.Date
+        Date backToDate = Date.from(instant);
+        System.out.println("Back to Date:  " + backToDate);
+
+        // 3. Instant -> LocalDateTime (requires explicit ZoneId)
+        LocalDateTime ldt = instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
+        System.out.println("LocalDateTime: " + ldt);
+
+        // 4. LocalDateTime -> Instant -> Date
+        Instant fromLdt = ldt.atZone(ZoneId.systemDefault()).toInstant();
+        Date dateFromLdt = Date.from(fromLdt);
+        System.out.println("Date from LDT: " + dateFromLdt);
+    }
+}
 ```

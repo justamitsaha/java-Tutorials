@@ -1,54 +1,46 @@
-import java.lang.reflect.Array;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import java.util.List;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
 public class Test {
     public static void main(String[] args) {
-        List<? super Developer> list = new ArrayList<Employee>();
+        Order order = new Order(new Date());
+        Order2 order2 = new Order2(new Date());
+        System.out.println("Original creation time: " + order.getCreationDate());
+        System.out.println("Original creation time (Order2): " + order2.getCreationDate());
 
-        // ✅ SAFE TO WRITE: Developer or its subtypes
-        list.add(new Developer("Harry"));
-        list.add(new SeniorDev("Harry"));
+        // Mutating internal state if no defensive copy is performed:
+        Date leakedDate = order.getCreationDate();
+        Date leakedDate2 = order2.getCreationDate();
+        leakedDate.setTime(0L); // Resets to 1970-01-01 00:00:00 UTC!
+        leakedDate2.setTime(0L); // Resets to 1970-01-01 00:00:00 UTC!
 
-        // ❌ CANNOT WRITE supertypes: list could be List<Developer>
-        // list.add(new Employee("Ron")); // Compile error!
-        // list.add(new Human("Hermione")); // Compile error!
-
-        // ❌ CANNOT READ as Developer: list could be List<Object>
-        // Developer d = list.get(0); // Compile error!
-
-        // ✅ Reading only guarantees Object:
-        Object obj = list.get(0);
-        System.out.println("Read as Object: " + obj);
+        // With defensive copying, the internal state remains intact:
+        System.out.println("After external mutation: " + order.getCreationDate());
+        System.out.println("After external mutation (Order2): " + order2.getCreationDate());
     }
 }
 
-class Human {
-    String name;
-    public Human(String name) { this.name = name; }
+class Order {
+    private final Date creationDate;
+
+    public Order(Date creationDate) {
+        // Defensive copy on write
+        this.creationDate = new Date(creationDate.getTime());
+    }
+
+    public Date getCreationDate() {
+        // Defensive copy on read
+        return new Date(this.creationDate.getTime());
+    }
 }
 
-class Employee extends Human {
-    public Employee(String name) { super(name); }
+class Order2 {
+    private Date creationDate;
+
+    public Order2(Date creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public Date getCreationDate() {
+        return creationDate;
+    }
 }
-
-class Developer extends Employee {
-    public Developer(String name) { super(name); }
-}
-
-class SeniorDev extends Developer {
-    public SeniorDev(String name) { super(name); }
-}
-
-
-
-
