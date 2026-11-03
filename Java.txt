@@ -1,0 +1,14 @@
+1)Describe how equals() method and hashcode() method in java, and how they are related and why ?
+2)Dependency injection and how to aplly this technique in large scale system for reduce complexity?
+3)what is spring ioc container?
+4)why java object goes to heap memory and explain when and what is string constant pool?
+5)what are design tactics you can apply during development to make class easily testable?
+
+
+
+
+6)Find deisgn problem in given code
+  gave me carDealer class and one interface named as vehicle,Have to find out design problems in code
+
+coding question:
+membership system where different membership types such as gold,silver and bronze and provided different discount percentages.complete code was already there but we have to pass the test cases
